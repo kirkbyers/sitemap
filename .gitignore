@@ -16,3 +16,5 @@
 # Ignore tmp files
 tmp/*
 
+#go dep vendor dir
+vendor
