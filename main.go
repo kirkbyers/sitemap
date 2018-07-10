@@ -1,24 +1,47 @@
 package main
 
 import (
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/kirkbyers/link"
 )
+
+const xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9"
+
+type loc struct {
+	Value string `xml:"loc"`
+}
+
+type urlset struct {
+	Urls  []loc  `xml:"url"`
+	Xmlns string `xml:"xmlns,attr"`
+}
 
 func main() {
 	urlFlag := flag.String("url", "https://gophercises.com", "the url to build sitemap for")
 	maxDepth := flag.Int("depth", 5, "Max number of links to traverse in a single path ")
 	flag.Parse()
 	pages := bfs(*urlFlag, *maxDepth)
-	for _, page := range pages {
-		fmt.Println(page)
+	toXML := urlset{
+		Xmlns: xmlns,
 	}
+	for _, page := range pages {
+		toXML.Urls = append(toXML.Urls, loc{page})
+	}
+	fmt.Print(xml.Header)
+	enc := xml.NewEncoder(os.Stdout)
+	enc.Indent("", "  ")
+	if err := enc.Encode(toXML); err != nil {
+		os.Exit(1)
+	}
+	fmt.Println()
 }
 
 func bfs(urlStr string, maxDepth int) []string {
